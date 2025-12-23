@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>CHANCYBOXES – Admin</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #062b1c;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { text-align: center; }
+    .box {
+      width: 48px;
+      height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .available { background: #22c55e; }
+    .sold { background: #ef4444; }
+    .panel {
+      max-width: 400px;
+      margin: 0 auto 20px;
+      background: #041f15;
+      padding: 16px;
+      border-radius: 10px;
+    }
+    input, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      border-radius: 6px;
+      border: none;
+    }
+    button { background: #34d399; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>پنل مدیریت CHANCYBOXES</h1>
+
+<div class="panel" id="login">
+  <input id="password" type="password" placeholder="رمز مدیریت">
+  <button onclick="login()">ورود</button>
+</div>
+
+<div class="panel" id="dashboard" style="display:none">
+  <div>
+    قیمت هر باکس ($):
+    <input id="price">
+    <button onclick="savePrice()">ذخیره قیمت</button>
+  </div>
+</div>
+
+<div id="boxes" style="text-align:center"></div>
+
+<script>
+const API = "https://YOUR-VERCEL-BACKEND.vercel.app";
+
+function login() {
+  fetch(API + "/api/admin-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: password.value })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.token) {
+      localStorage.token = d.token;
+      login.style.display = "none";
+      dashboard.style.display = "block";
+      loadDashboard();
+    } else alert("رمز اشتباه است");
+  });
+}
+
+function authHeaders() {
+  return { "Authorization": "Bearer " + localStorage.token };
+}
+
+function loadDashboard() {
+  fetch(API + "/api/admin-dashboard", { headers: authHeaders() })
+    .then(r => r.json())
+    .then(d => {
+      price.value = d.priceUsd;
+      boxes.innerHTML = "";
+      d.boxes.forEach(b => {
+        const el = document.createElement("div");
+        el.className = "box " + b.status;
+        el.innerText = b.id;
+        boxes.appendChild(el);
+      });
+    });
+}
+
+function savePrice() {
+  fetch(API + "/api/admin-set-price", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders()
+    },
+    body: JSON.stringify({ priceUsd: price.value })
+  })
+  .then(() => alert("قیمت ذخیره شد"));
+}
+</script>
+
+</body>
+</html>
